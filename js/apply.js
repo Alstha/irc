@@ -275,14 +275,17 @@
   function runTypewriter(el) {
     var text = el.getAttribute("data-text");
     if (!text) return;
-    el.textContent = "";
+    el.style.display = "grid";
+    el.innerHTML = '<span style="visibility:hidden; grid-area:1/1; pointer-events:none;">' + text + '</span><span class="tw-text" style="grid-area:1/1;"></span>';
     el.classList.remove("done");
+
+    var twText = el.querySelector('.tw-text');
 
     var i = 0;
     var speed = 25;
     function type() {
       if (i < text.length) {
-        el.textContent += text.charAt(i);
+        twText.textContent += text.charAt(i);
         i++;
         setTimeout(type, speed);
       } else {
@@ -400,6 +403,13 @@
       var phoneRegex = /^\d{10}$/; // exactly 10 digits
       if (!phoneVal || !phoneRegex.test(phoneVal)) {
         phoneEl.closest(".floating-field").classList.add("has-error");
+        valid = false;
+      }
+      var emailEl = slide.querySelector("#q_email");
+      var emailVal = emailEl.value.trim();
+      var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailVal || !emailRegex.test(emailVal)) {
+        emailEl.closest(".floating-field").classList.add("has-error");
         valid = false;
       }
     }
@@ -593,6 +603,7 @@
     var submission = {
       full_name: document.getElementById("q_name").value.trim(),
       phone: document.getElementById("q_phone").value.trim(),
+      email: document.getElementById("q_email").value.trim(),
       college_status: finalStatus,
       college_status_more: getMore("q_status_more"),
       responsibilities: respsArr.join(", "),
