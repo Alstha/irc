@@ -1,0 +1,22 @@
+/* Gallery page — filters + generated media tiles + lightbox */
+
+.gallery-toolbar { display: flex; flex-direction: column; gap: var(--space-4); margin-bottom: var(--space-8); }
+.gallery-toolbar__row { display: flex; align-items: center; gap: var(--space-4); flex-wrap: wrap; }
+.gallery-toolbar__label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--color-text-muted); font-weight: var(--font-weight-semibold); width: 100%; }
+
+.gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: var(--space-6); }
+.gallery-tile {
+  aspect-ratio: 4/3; border-radius: var(--radius-xl); position: relative; overflow: hidden;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--space-3);
+  color: #fff; text-align: center; padding: var(--space-5); background: var(--obsidian-900); border: 1px solid var(--color-border);
+  transition: transform var(--duration-base) var(--ease-spring), box-shadow var(--duration-base), border-color var(--duration-base);
+  box-shadow: var(--shadow-sm);
+}
+.gallery-tile::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 35%, rgba(5,5,5,0.7)); }
+.gallery-tile:hover { transform: translateY(-8px) scale(1.02); box-shadow: var(--shadow-lg); border-color: var(--accent-cyan); }
+.gallery-tile svg { width: 28px; height: 28px; opacity: 0.9; position: relative; z-index: 1; color: var(--accent-cyan); }
+.gallery-tile__caption { position: relative; z-index: 1; font-size: 0.85rem; font-weight: var(--font-weight-medium); font-family: var(--font-heading); }
+.gallery-tile__badge { position: absolute; top: 14px; left: 14px; z-index: 1; }
+.gallery-tile__play { position: absolute; top: 14px; right: 14px; z-index: 1; width: 34px; height: 34px; border-radius: 50%; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+.gallery-tile__play svg { width: 15px; height: 15px; margin: 0; color: #fff; }
+.gallery-empty { text-align: center; padding: var(--space-9); color: var(--color-text-muted); grid-column: 1 / -1; font-size: 0.95rem; }

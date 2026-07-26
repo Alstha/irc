@@ -1,0 +1,67 @@
+/* Magazine page — archive grid + digital flipbook reader */
+
+.magazine-toolbar { display: flex; align-items: center; justify-content: space-between; gap: var(--space-5); flex-wrap: wrap; margin-bottom: var(--space-8); }
+.magazine-search { position: relative; max-width: 340px; width: 100%; }
+.magazine-search svg { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); width: 18px; height: 18px; color: var(--color-text-muted); }
+.magazine-search input { width: 100%; padding: 0.8rem 1rem 0.8rem 2.8rem; border-radius: var(--radius-pill); border: 1.5px solid var(--color-border); background: var(--color-bg-elevated); font-size: 0.9rem; transition: border-color var(--duration-fast), box-shadow var(--duration-fast); }
+.magazine-search input:focus { border-color: var(--accent-indigo); outline: none; box-shadow: 0 0 0 4px var(--color-primary-soft); }
+
+.issue-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: var(--space-7); }
+.issue-card {
+  overflow: hidden; display: flex; flex-direction: column; border-radius: var(--radius-xl);
+  background: var(--color-bg-elevated); border: 1px solid var(--color-border); box-shadow: var(--shadow-sm);
+  transition: transform var(--duration-base) var(--ease-spring), box-shadow var(--duration-base), border-color var(--duration-base);
+}
+.issue-card:hover { transform: translateY(-8px); box-shadow: var(--shadow-lg); border-color: var(--accent-indigo); }
+.issue-card__cover {
+  aspect-ratio: 3/4; position: relative; overflow: hidden;
+  background: linear-gradient(145deg, var(--accent-indigo), var(--obsidian-900));
+  display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
+  color: #fff; padding: var(--space-6); gap: var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+}
+.issue-card__cover::before { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at top right, rgba(6, 182, 212, 0.2), transparent 60%); }
+.issue-card__cover svg { width: 36px; height: 36px; opacity: 0.9; position: relative; color: var(--accent-cyan); }
+.issue-card__cover-issue { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.1em; opacity: 0.75; position: relative; font-weight: var(--font-weight-medium); }
+.issue-card__cover-title { font-size: 1.25rem; font-weight: var(--font-weight-bold); position: relative; font-family: var(--font-heading); }
+.issue-card__body { padding: var(--space-6); display: flex; flex-direction: column; gap: var(--space-4); flex: 1; }
+.issue-card__body p { font-size: 0.875rem; flex: 1; line-height: 1.6; }
+.issue-card__meta { font-size: 0.78rem; color: var(--color-text-muted); }
+.issue-card__actions { display: flex; gap: var(--space-3); }
+.issue-card__actions .btn { flex: 1; }
+
+/* Flipbook reader overlay */
+.flipbook-overlay {
+  position: fixed; inset: 0; z-index: var(--z-modal);
+  background: rgba(5,5,5,0.94); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  display: none; align-items: center; justify-content: center; flex-direction: column;
+  padding: var(--space-6);
+}
+.flipbook-overlay.is-open { display: flex; }
+.flipbook-overlay__top { width: 100%; max-width: 680px; display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-6); color: #fff; }
+.flipbook-overlay__top h3 { color: #fff; font-size: 1.15rem; font-family: var(--font-heading); }
+.flipbook-stage { width: 100%; max-width: 480px; perspective: 1600px; }
+.flipbook-book {
+  aspect-ratio: 3/4; border-radius: var(--radius-xl); box-shadow: 0 30px 60px rgba(0,0,0,0.6);
+  overflow: hidden; position: relative; background: var(--obsidian-900); border: 1px solid var(--color-border);
+}
+.flipbook-page {
+  position: absolute; inset: 0; padding: var(--space-8) var(--space-7);
+  display: flex; flex-direction: column; justify-content: center;
+  transition: transform 0.6s var(--ease-spring), opacity 0.4s;
+  transform-origin: center;
+  backface-visibility: hidden;
+}
+.flipbook-page.is-turning-next { transform: rotateY(-15deg) scale(.96); opacity: 0; }
+.flipbook-page.is-turning-prev { transform: rotateY(15deg) scale(.96); opacity: 0; }
+.flipbook-page--cover { background: linear-gradient(150deg, var(--accent-indigo), var(--obsidian-950)); color: #fff; text-align: center; align-items: center; gap: var(--space-4); }
+.flipbook-page--cover svg { width: 44px; height: 44px; opacity: 0.9; color: var(--accent-cyan); }
+.flipbook-page--toc { background: var(--color-bg-elevated); color: var(--color-text-primary); }
+.flipbook-page--about { background: var(--color-bg-alt); color: var(--color-text-primary); }
+.flipbook-page--back { background: var(--obsidian-950); color: #fff; text-align: center; align-items: center; gap: var(--space-4); }
+.flipbook-page__label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.1em; opacity: 0.7; margin-bottom: var(--space-3); }
+.flipbook-page__tags { display: flex; gap: var(--space-2); flex-wrap: wrap; margin-top: var(--space-5); }
+.flipbook-controls { display: flex; align-items: center; justify-content: center; gap: var(--space-6); margin-top: var(--space-7); }
+.flipbook-dots { display: flex; gap: 8px; }
+.flipbook-dots span { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.25); transition: background-color var(--duration-fast); }
+.flipbook-dots span.is-active { background: var(--accent-cyan); transform: scale(1.2); }

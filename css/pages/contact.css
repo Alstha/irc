@@ -1,0 +1,46 @@
+/* Contact page — info cards, map frame, membership cards, form */
+
+.contact-grid { display: grid; grid-template-columns: 0.85fr 1.15fr; gap: var(--space-7); align-items: start; }
+@media (max-width: 900px) { .contact-grid { grid-template-columns: 1fr; } }
+
+.contact-info-card {
+  padding: var(--space-7); display: flex; flex-direction: column; gap: var(--space-6);
+  border-radius: var(--radius-xl); background: var(--color-bg-elevated); border: 1px solid var(--color-border); box-shadow: var(--shadow-sm);
+}
+.contact-info-item { display: flex; gap: var(--space-4); align-items: flex-start; }
+.contact-info-item__icon {
+  width: 48px; height: 48px; border-radius: var(--radius-md); flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--color-primary-soft); color: var(--color-primary);
+}
+.contact-info-item__icon svg { width: 24px; height: 24px; }
+.contact-info-item h4 { font-size: 1rem; margin-bottom: 3px; font-family: var(--font-heading); }
+.contact-info-item p, .contact-info-item a { font-size: 0.9rem; color: var(--color-text-secondary); }
+.contact-info-item a:hover { color: var(--color-primary); }
+.contact-info-card .site-footer__social { margin-top: 0; }
+.contact-info-card .site-footer__social a { background: var(--color-bg-alt); border-color: var(--color-border); }
+.contact-info-card .site-footer__social svg { color: var(--color-text-primary); }
+.contact-info-card .site-footer__social a:hover svg { color: #fff; }
+
+.map-frame { border-radius: var(--radius-xl); overflow: hidden; border: 1px solid var(--color-border); box-shadow: var(--shadow-sm); }
+.map-frame iframe { width: 100%; height: 340px; border: 0; display: block; filter: grayscale(0.2) contrast(1.1); }
+
+.membership-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-6); }
+@media (max-width: 980px) { .membership-grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 560px) { .membership-grid { grid-template-columns: 1fr; } }
+.membership-card {
+  padding: var(--space-6); text-align: center; border-radius: var(--radius-lg); background: var(--color-bg-elevated); border: 1px solid var(--color-border);
+  transition: transform var(--duration-base) var(--ease-spring), border-color var(--duration-base);
+}
+.membership-card:hover { transform: translateY(-5px); border-color: var(--accent-indigo); }
+.membership-card__icon {
+  width: 50px; height: 50px; border-radius: 50%; margin: 0 auto var(--space-4);
+  display: flex; align-items: center; justify-content: center;
+  background: var(--color-primary-soft); color: var(--color-primary);
+}
+.membership-card__icon svg { width: 24px; height: 24px; }
+.membership-card h4 { font-size: 1rem; margin-bottom: var(--space-2); font-family: var(--font-heading); }
+.membership-card p { font-size: 0.85rem; line-height: 1.5; }
+
+.contact-form-card { padding: var(--space-8); border-radius: var(--radius-xl); background: var(--color-bg-elevated); border: 1px solid var(--color-border); }
+.form-submit-row { display: flex; align-items: center; gap: var(--space-4); margin-top: var(--space-4); }
