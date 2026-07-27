@@ -41,6 +41,8 @@
     initCommitCards();
     initSkillBars();
     initSlider();
+    initSpeechToText();
+    initInputCleaners();
     updateUI();
   });
 
@@ -56,74 +58,89 @@
 
   /* ---- Navigation ------------------------------------------------------ */
   function initNav() {
-    prevBtn.addEventListener("click", function () {
-      if (current > 1) goToSlide(current - 1);
-      else if (current === 1) {
-        goToSlide(0);
-        questNav.style.display = "none";
-      }
-    });
-    nextBtn.addEventListener("click", function () {
-      if (validateSlide(current)) {
-        if (current < TOTAL_SLIDES - 1) {
-          goToSlide(current + 1);
+    if (prevBtn) {
+      prevBtn.addEventListener("click", function () {
+        if (current > 1) goToSlide(current - 1);
+        else if (current === 1) {
+          goToSlide(0);
+          questNav.style.display = "none";
         }
-      }
-    });
-    initBgMusic();
+      });
+    }
+    if (nextBtn) {
+      nextBtn.addEventListener("click", function () {
+        if (validateSlide(current)) {
+          if (current < TOTAL_SLIDES - 1) {
+            goToSlide(current + 1);
+          }
+        }
+      });
+    }
 
     submitBtn.addEventListener("click", function () {
       if (validateSlide(current)) {
         submitForm();
       }
     });
-  }
 
-  /* ---- Background Music ------------------------------------------------ */
-  function initBgMusic() {
-    var bgMusic = document.getElementById("bgMusic");
-    var toggleBtn = document.getElementById("musicToggleBtn");
-    var isPlaying = true; // Default unmuted
-    var hasStartedPlaying = false;
+    // Swipe & Keyboard navigation
+    var touchStartX = null;
+    var touchEndX = null;
+    var touchStartY = null;
+    var touchEndY = null;
 
-    if (!bgMusic || !toggleBtn) return;
-
-    // Default volume
-    bgMusic.volume = 0.3;
-
-    // Try playing immediately
-    bgMusic.play().then(function() {
-      hasStartedPlaying = true;
-    }).catch(function(e) {
-      console.warn("Autoplay blocked. Waiting for first interaction.");
-    });
-
-    // Start playing on the very first click anywhere if autoplay was blocked
-    document.body.addEventListener('click', function(e) {
-      // Don't override if they explicitly clicked the mute button
-      if (e.target.closest('#musicToggleBtn')) return;
-      
-      if (isPlaying && !hasStartedPlaying) {
-        bgMusic.play().then(function() {
-          hasStartedPlaying = true;
-        }).catch(function(e) {});
+    document.addEventListener("touchstart", function(e) {
+      if (e.target.closest('input, textarea, button, .card-option, .chip, .scale-slider, .mic-btn, a')) {
+        touchStartX = null;
+        touchStartY = null;
+        return;
       }
-    }, { once: true });
+      touchStartX = e.changedTouches[0].screenX;
+      touchStartY = e.changedTouches[0].screenY;
+    }, {passive: true});
 
-    toggleBtn.addEventListener("click", function (e) {
-      e.stopPropagation();
-      if (isPlaying) {
-        bgMusic.pause();
-        toggleBtn.textContent = "🔇";
-        isPlaying = false;
-      } else {
-        bgMusic.play().then(function() {
-          toggleBtn.textContent = "🔊";
-          isPlaying = true;
-          hasStartedPlaying = true;
-        }).catch(function(e) {
-          console.warn("Audio play failed:", e);
-        });
+    document.addEventListener("touchend", function(e) {
+      if (touchStartX === null || touchStartY === null) return;
+      touchEndX = e.changedTouches[0].screenX;
+      touchEndY = e.changedTouches[0].screenY;
+      handleSwipe();
+      touchStartX = null;
+      touchStartY = null;
+    }, {passive: true});
+
+    function handleSwipe() {
+      var dx = touchEndX - touchStartX;
+      var dy = touchEndY - touchStartY;
+      if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 50) {
+        if (dx < 0) {
+          // Swipe left -> Next
+          if (validateSlide(current) && current < TOTAL_SLIDES - 1) {
+            goToSlide(current + 1);
+          }
+        } else {
+          // Swipe right -> Prev
+          if (current > 1) {
+            goToSlide(current - 1);
+          } else if (current === 1) {
+            goToSlide(0);
+            questNav.style.display = "none";
+          }
+        }
+      }
+    }
+
+    document.addEventListener("keydown", function(e) {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+      if (e.key === "ArrowRight") {
+        if (validateSlide(current) && current < TOTAL_SLIDES - 1) {
+          goToSlide(current + 1);
+        }
+      } else if (e.key === "ArrowLeft") {
+        if (current > 1) goToSlide(current - 1);
+        else if (current === 1) {
+          goToSlide(0);
+          questNav.style.display = "none";
+        }
       }
     });
   }
@@ -205,18 +222,19 @@
   function goToSlide(idx) {
     if (idx === current) return;
 
+    var isNext = idx > current;
     var oldSlide = slides[current];
     var newSlide = slides[idx];
 
     // Animate out
-    oldSlide.classList.remove("is-active", "anim-enter");
-    oldSlide.classList.add("anim-exit");
+    oldSlide.classList.remove("is-active", "anim-enter-next", "anim-enter-prev");
+    oldSlide.classList.add(isNext ? "anim-exit-next" : "anim-exit-prev");
 
     setTimeout(function () {
-      oldSlide.classList.remove("anim-exit");
+      oldSlide.classList.remove("anim-exit-next", "anim-exit-prev");
 
       // Animate in
-      newSlide.classList.add("is-active", "anim-enter");
+      newSlide.classList.add("is-active", isNext ? "anim-enter-next" : "anim-enter-prev");
       current = idx;
       updateUI();
 
@@ -250,22 +268,33 @@
     progressFill.style.width = pct + "%";
 
     // Buttons
-    prevBtn.disabled = current === 0;
+    if (prevBtn) prevBtn.disabled = current === 0;
 
     if (current === TOTAL_SLIDES - 1) {
-      nextBtn.style.display = "none";
+      if (nextBtn) nextBtn.style.display = "none";
       submitBtn.style.display = "";
+      if (document.getElementById("swipeHint")) document.getElementById("swipeHint").style.display = "none";
+      if (document.getElementById("staticSwipeHint")) document.getElementById("staticSwipeHint").style.display = "none";
       buildReview();
     } else {
-      nextBtn.style.display = "";
+      if (nextBtn) nextBtn.style.display = "";
       submitBtn.style.display = "none";
+      if (current < 2) {
+        if (document.getElementById("swipeHint")) document.getElementById("swipeHint").style.display = "flex";
+        if (document.getElementById("staticSwipeHint")) document.getElementById("staticSwipeHint").style.display = "none";
+      } else {
+        if (document.getElementById("swipeHint")) document.getElementById("swipeHint").style.display = "none";
+        if (document.getElementById("staticSwipeHint")) document.getElementById("staticSwipeHint").style.display = "block";
+      }
     }
 
     // Counter
-    if (current >= 1) {
-      navCounter.textContent = current + " / " + TOTAL_STEPS;
-    } else {
-      navCounter.textContent = "";
+    if (navCounter) {
+      if (current >= 1) {
+        navCounter.textContent = current + " / " + TOTAL_STEPS;
+      } else {
+        navCounter.textContent = "";
+      }
     }
   }
 
@@ -293,6 +322,121 @@
       }
     }
     type();
+  }
+
+  /* ---- Speech to Text -------------------------------------------------- */
+  function initSpeechToText() {
+    var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    
+    document.querySelectorAll(".floating-field textarea, .floating-field input:not([type='range']):not([type='radio']):not([type='checkbox'])").forEach(function(inputEl) {
+      var field = inputEl.closest(".floating-field");
+      if (!field) return;
+
+      var micBtn = document.createElement("button");
+      micBtn.type = "button";
+      micBtn.className = "mic-btn";
+      micBtn.title = "Click to Speak";
+      micBtn.innerHTML = '🎤';
+      
+      field.appendChild(micBtn);
+
+      if (!SpeechRecognition) {
+        micBtn.addEventListener("click", function(e) {
+          e.preventDefault();
+          alert("Speech Recognition is not supported in this browser. Please use Chrome or Edge.");
+        });
+        return;
+      }
+
+      var recognition = new SpeechRecognition();
+      recognition.continuous = true; // Stay active for long answers
+      recognition.interimResults = true; // Show text instantly as you speak
+      recognition.lang = 'en-US';
+
+      var isRecording = false;
+      var originalText = "";
+
+      micBtn.addEventListener("click", function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (isRecording) {
+          recognition.stop();
+          return;
+        }
+
+        try {
+          recognition.start();
+        } catch(err) {
+          alert("Microphone Error! Ensure you granted mic permissions and are running this on a secure connection (HTTPS).");
+          console.error("Speech recognition error", err);
+        }
+      });
+
+      recognition.onstart = function() {
+        isRecording = true;
+        micBtn.classList.add("is-recording");
+        micBtn.innerHTML = '🛑';
+        originalText = inputEl.value.trim();
+        if (originalText.length > 0) originalText += " ";
+      };
+
+      recognition.onresult = function(e) {
+        var transcript = "";
+        for (var i = 0; i < e.results.length; i++) {
+          transcript += e.results[i][0].transcript;
+        }
+        var finalVal = originalText + transcript;
+        
+        // Remove trailing full stops added by STT
+        if (inputEl.tagName.toLowerCase() === 'input') {
+          finalVal = finalVal.replace(/\.+$/, "").trim();
+        }
+
+        inputEl.value = finalVal;
+        inputEl.dispatchEvent(new Event("input")); // To clear errors/triggers
+      };
+
+      recognition.onend = function() {
+        isRecording = false;
+        micBtn.classList.remove("is-recording");
+        micBtn.innerHTML = '🎤';
+      };
+      
+      recognition.onerror = function(e) {
+        isRecording = false;
+        micBtn.classList.remove("is-recording");
+        micBtn.innerHTML = '🎤';
+        if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
+          alert("Microphone access denied! Please allow microphone permissions in your browser settings.");
+        } else {
+          console.error("Speech recognition error: ", e.error);
+        }
+      };
+    });
+  }
+
+  /* ---- Auto-resize Textareas & Clean Inputs --------------------------- */
+  function initInputCleaners() {
+    document.querySelectorAll("textarea").forEach(function(textarea) {
+      function resize() {
+        textarea.style.height = "auto";
+        textarea.style.height = textarea.scrollHeight + "px";
+      }
+      textarea.addEventListener("input", resize);
+      // Wait slightly so any CSS transitions/render layouts finish
+      setTimeout(resize, 100);
+    });
+
+    // Strip trailing full stops from single-line inputs on blur
+    document.querySelectorAll("input[type='text'], input[type='email'], input[type='tel']").forEach(function(input) {
+      input.addEventListener("blur", function() {
+        if (this.value) {
+          this.value = this.value.replace(/\.+$/, "").trim();
+          this.dispatchEvent(new Event("input"));
+        }
+      });
+    });
   }
 
   /* ---- Card Selects (single) ------------------------------------------- */
