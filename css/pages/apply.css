@@ -384,6 +384,10 @@
 .floating-field:hover {
   transform: translateY(-2px);
 }
+/* Elevate active field so absolute children (STT controls) overlay subsequent fields */
+.floating-field:focus-within {
+  z-index: 50;
+}
 .floating-field input,
 .floating-field textarea {
   width: 100%;
@@ -432,7 +436,7 @@
 }
 .floating-field .field-line {
   position: absolute;
-  bottom: 0;
+  bottom: -7px;
   left: 50%;
   width: 0;
   height: 2px;
@@ -490,23 +494,23 @@
 
 /* ---- Dynamic STT Controls ---------------------------------------- */
 .stt-controls {
-  position: absolute;
-  top: calc(100% + 12px);
-  left: 50%;
-  transform: translateX(-50%);
   display: flex;
+  justify-content: center;
   align-items: center;
   gap: 16px;
   z-index: 1000;
+  height: 64px;
+  margin-top: 16px;
   transition: all 0.3s var(--ease-spring);
   opacity: 1;
   pointer-events: auto;
 }
 
 .stt-controls.is-disabled {
+  height: 0;
+  margin-top: 0;
   opacity: 0;
   pointer-events: none;
-  transform: translateX(-50%) translateY(-10px);
 }
 
 .global-mic-btn,
