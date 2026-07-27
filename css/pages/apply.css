@@ -488,24 +488,25 @@
   display: flex;
 }
 
-/* ---- Global STT Controls ---------------------------------------- */
+/* ---- Dynamic STT Controls ---------------------------------------- */
 .stt-controls {
-  position: fixed;
-  bottom: 40px;
+  position: absolute;
+  top: calc(100% + 12px);
   left: 50%;
   transform: translateX(-50%);
   display: flex;
   align-items: center;
   gap: 16px;
   z-index: 1000;
-  transition: all 0.4s var(--ease-spring);
+  transition: all 0.3s var(--ease-spring);
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .stt-controls.is-disabled {
-  opacity: 0.3;
+  opacity: 0;
   pointer-events: none;
-  filter: grayscale(100%);
-  transform: translateX(-50%) scale(0.95);
+  transform: translateX(-50%) translateY(-10px);
 }
 
 .global-mic-btn,
