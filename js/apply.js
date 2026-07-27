@@ -350,12 +350,11 @@
 
       var recognition = new SpeechRecognition();
       recognition.continuous = true; // Stay active for long answers
-      recognition.interimResults = true; // Show text instantly as you speak
+      recognition.interimResults = false; // DISABLED: Fixes Android duplicate repetition bug
       recognition.lang = 'en-US';
 
       var isRecording = false;
       var intentionalStop = false;
-      var finalTranscript = "";
 
       micBtn.addEventListener("click", function(e) {
         e.preventDefault();
@@ -381,20 +380,20 @@
         intentionalStop = false;
         micBtn.classList.add("is-recording");
         micBtn.innerHTML = '🛑';
-        finalTranscript = inputEl.value.trim();
-        if (finalTranscript.length > 0) finalTranscript += " ";
       };
 
       recognition.onresult = function(e) {
-        var interimTranscript = "";
+        // Since interimResults is false, we only get finalized chunks.
+        // We extract the newly finalized text and simply append it.
+        var newText = "";
         for (var i = e.resultIndex; i < e.results.length; ++i) {
-          if (e.results[i].isFinal) {
-            finalTranscript += e.results[i][0].transcript;
-          } else {
-            interimTranscript += e.results[i][0].transcript;
-          }
+          newText += e.results[i][0].transcript;
         }
-        var displayValue = finalTranscript + interimTranscript;
+        
+        var currentVal = inputEl.value.trim();
+        if (currentVal.length > 0 && newText.trim().length > 0) currentVal += " ";
+        
+        var displayValue = currentVal + newText;
         
         // Remove trailing full stops added by STT
         if (inputEl.tagName.toLowerCase() === 'input') {
