@@ -324,105 +324,152 @@
     type();
   }
 
-  /* ---- Speech to Text -------------------------------------------------- */
+  /* ---- Speech to Text (Global) ----------------------------------------- */
   function initSpeechToText() {
     var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     
-    document.querySelectorAll(".floating-field textarea, .floating-field input:not([type='range']):not([type='radio']):not([type='checkbox'])").forEach(function(inputEl) {
-      var field = inputEl.closest(".floating-field");
-      if (!field) return;
+    if (!SpeechRecognition) {
+      console.warn("Speech Recognition is not supported in this browser.");
+      return;
+    }
 
-      var micBtn = document.createElement("button");
-      micBtn.type = "button";
-      micBtn.className = "mic-btn";
-      micBtn.title = "Click to Speak";
-      micBtn.innerHTML = '🎤';
-      
-      field.appendChild(micBtn);
+    var recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = 'en-US';
 
-      if (!SpeechRecognition) {
-        micBtn.addEventListener("click", function(e) {
-          e.preventDefault();
-          alert("Speech Recognition is not supported in this browser. Please use Chrome or Edge.");
-        });
+    var isRecording = false;
+    var originalText = "";
+    var activeInputEl = null;
+
+    // Create STT Controls Container
+    var sttControls = document.createElement("div");
+    sttControls.className = "stt-controls is-disabled";
+    
+    // Create Global Lang Button
+    var globalLangBtn = document.createElement("button");
+    globalLangBtn.type = "button";
+    globalLangBtn.className = "global-lang-btn";
+    globalLangBtn.title = "Toggle Language";
+    globalLangBtn.innerHTML = '🇺🇸';
+    
+    // Create Global Mic Button
+    var globalMicBtn = document.createElement("button");
+    globalMicBtn.type = "button";
+    globalMicBtn.className = "global-mic-btn";
+    globalMicBtn.title = "Click to Speak";
+    globalMicBtn.innerHTML = '🎤';
+
+    sttControls.appendChild(globalLangBtn);
+    sttControls.appendChild(globalMicBtn);
+    document.body.appendChild(sttControls);
+
+    // Prevent default on mousedown/touchstart to keep input focused!
+    [globalMicBtn, globalLangBtn, sttControls].forEach(function(el) {
+      el.addEventListener("mousedown", function(e) { e.preventDefault(); });
+      el.addEventListener("touchstart", function(e) { e.preventDefault(); });
+    });
+
+    // Language Toggle Logic
+    var isNepali = false;
+    globalLangBtn.addEventListener("click", function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (isRecording) {
+        recognition.stop();
+      }
+      isNepali = !isNepali;
+      globalLangBtn.innerHTML = isNepali ? '🇳🇵' : '🇺🇸';
+      recognition.lang = isNepali ? 'ne-NP' : 'en-US';
+    });
+
+    globalMicBtn.addEventListener("click", function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (isRecording) {
+        recognition.stop();
         return;
       }
 
-      var recognition = new SpeechRecognition();
-      recognition.continuous = true;
-      recognition.interimResults = true;
-      recognition.lang = 'ne-NP'; // Default to Nepali (handles English too)
-
-      var isRecording = false;
-      var originalText = "";
-
-      micBtn.addEventListener("click", function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-
-        if (isRecording) {
-          recognition.stop();
-          return;
-        }
-
+      if (activeInputEl) {
         try {
           recognition.start();
         } catch(err) {
           alert("Microphone Error! Ensure you granted mic permissions and are running this on a secure connection (HTTPS).");
           console.error("Speech recognition error", err);
         }
-      });
+      }
+    });
 
-      recognition.onstart = function() {
-        isRecording = true;
-        micBtn.classList.add("is-recording");
-        micBtn.innerHTML = '🛑';
-        originalText = inputEl.value.trim();
+    recognition.onstart = function() {
+      isRecording = true;
+      globalMicBtn.classList.add("is-recording");
+      globalMicBtn.innerHTML = '🛑';
+      if (activeInputEl) {
+        originalText = activeInputEl.value.trim();
         if (originalText.length > 0) originalText += " ";
-      };
+      }
+    };
 
-      recognition.onresult = function(e) {
-        var transcript = "";
-        for (var i = e.resultIndex; i < e.results.length; ++i) {
-          transcript += e.results[i][0].transcript;
-        }
-        
-        var displayValue = originalText + transcript;
-        
-        // Remove trailing full stops added by STT
-        if (inputEl.tagName.toLowerCase() === 'input') {
-          displayValue = displayValue.replace(/\.+$/, "").trim();
-          
-          // Remove ALL spaces for email and phone fields
-          if (inputEl.type === 'email' || inputEl.type === 'tel') {
-            displayValue = displayValue.replace(/\s+/g, '');
-            // For emails, also fix common STT mistakes like "at" or "dot"
-            if (inputEl.type === 'email') {
-              displayValue = displayValue.toLowerCase().replace(/at/g, '@').replace(/dot/g, '.');
-            }
+    recognition.onresult = function(e) {
+      if (!activeInputEl) return;
+      var transcript = "";
+      for (var i = e.resultIndex; i < e.results.length; ++i) {
+        transcript += e.results[i][0].transcript;
+      }
+      
+      var displayValue = originalText + transcript;
+      
+      // Cleanups
+      if (activeInputEl.tagName.toLowerCase() === 'input') {
+        displayValue = displayValue.replace(/\.+$/, "").trim();
+        if (activeInputEl.type === 'email' || activeInputEl.type === 'tel') {
+          displayValue = displayValue.replace(/\s+/g, '');
+          if (activeInputEl.type === 'email') {
+            displayValue = displayValue.toLowerCase().replace(/at/g, '@').replace(/dot/g, '.');
           }
         }
+      }
 
-        inputEl.value = displayValue;
-        inputEl.dispatchEvent(new Event("input")); // To clear errors/triggers
-      };
+      activeInputEl.value = displayValue;
+      activeInputEl.dispatchEvent(new Event("input")); // Triggers visual updates & mutual exclusivity
+    };
 
-      recognition.onend = function() {
-        isRecording = false;
-        micBtn.classList.remove("is-recording");
-        micBtn.innerHTML = '🎤';
-      };
-      
-      recognition.onerror = function(e) {
-        isRecording = false;
-        micBtn.classList.remove("is-recording");
-        micBtn.innerHTML = '🎤';
-        if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
-          alert("Microphone access denied! Please allow microphone permissions in your browser settings.");
-        } else {
-          console.error("Speech recognition error: ", e.error);
+    recognition.onend = function() {
+      isRecording = false;
+      globalMicBtn.classList.remove("is-recording");
+      globalMicBtn.innerHTML = '🎤';
+    };
+    
+    recognition.onerror = function(e) {
+      isRecording = false;
+      globalMicBtn.classList.remove("is-recording");
+      globalMicBtn.innerHTML = '🎤';
+      if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
+        alert("Microphone access denied! Please allow microphone permissions in your browser settings.");
+      } else {
+        console.error("Speech recognition error: ", e.error);
+      }
+    };
+
+    // Bind Focus/Blur Events to all valid text inputs
+    document.querySelectorAll(".floating-field textarea, .floating-field input:not([type='range']):not([type='radio']):not([type='checkbox'])").forEach(function(inputEl) {
+      inputEl.addEventListener("focus", function() {
+        if (isRecording && activeInputEl !== this) {
+          recognition.stop(); // Stop recording if they switch fields
         }
-      };
+        activeInputEl = this;
+        sttControls.classList.remove("is-disabled");
+      });
+
+      inputEl.addEventListener("blur", function() {
+        setTimeout(function() {
+          if (document.activeElement !== activeInputEl && !isRecording) {
+            sttControls.classList.add("is-disabled");
+          }
+        }, 150);
+      });
     });
   }
 
