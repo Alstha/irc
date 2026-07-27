@@ -355,7 +355,7 @@
 
       var isRecording = false;
       var intentionalStop = false;
-      var originalText = "";
+      var finalTranscript = "";
 
       micBtn.addEventListener("click", function(e) {
         e.preventDefault();
@@ -381,23 +381,27 @@
         intentionalStop = false;
         micBtn.classList.add("is-recording");
         micBtn.innerHTML = '🛑';
-        originalText = inputEl.value.trim();
-        if (originalText.length > 0) originalText += " ";
+        finalTranscript = inputEl.value.trim();
+        if (finalTranscript.length > 0) finalTranscript += " ";
       };
 
       recognition.onresult = function(e) {
-        var transcript = "";
-        for (var i = 0; i < e.results.length; i++) {
-          transcript += e.results[i][0].transcript;
+        var interimTranscript = "";
+        for (var i = e.resultIndex; i < e.results.length; ++i) {
+          if (e.results[i].isFinal) {
+            finalTranscript += e.results[i][0].transcript;
+          } else {
+            interimTranscript += e.results[i][0].transcript;
+          }
         }
-        var finalVal = originalText + transcript;
+        var displayValue = finalTranscript + interimTranscript;
         
         // Remove trailing full stops added by STT
         if (inputEl.tagName.toLowerCase() === 'input') {
-          finalVal = finalVal.replace(/\.+$/, "").trim();
+          displayValue = displayValue.replace(/\.+$/, "").trim();
         }
 
-        inputEl.value = finalVal;
+        inputEl.value = displayValue;
         inputEl.dispatchEvent(new Event("input")); // To clear errors/triggers
       };
 
