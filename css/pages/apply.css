@@ -33,6 +33,20 @@
   border-bottom: 1px solid var(--color-border);
   box-shadow: 0 4px 20px rgba(0,0,0,0.2);
 }
+.static-swipe-hint {
+  position: absolute;
+  top: 24px;
+  right: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  letter-spacing: 0.1em;
+  display: none;
+  pointer-events: none;
+}
+@media (max-width: 768px) {
+  .static-swipe-hint { top: 16px; right: 12px; font-size: 10px; }
+}
 
 /* ---- Logo -------------------------------------------------------------- */
 .quest-logo {
@@ -169,20 +183,35 @@
   opacity: 1;
   pointer-events: all;
 }
-.quest-slide.anim-enter {
-  animation: slideUp 0.5s var(--ease-out-expo) forwards;
+.quest-slide.anim-enter-next {
+  animation: slideInRight 0.5s var(--ease-out-expo) forwards;
 }
-.quest-slide.anim-exit {
-  animation: slideDown 0.35s var(--ease-out) forwards;
+.quest-slide.anim-exit-next {
+  animation: slideOutLeft 0.35s var(--ease-out) forwards;
   position: absolute;
 }
-@keyframes slideUp {
-  from { opacity: 0; transform: translateY(60px); }
-  to   { opacity: 1; transform: translateY(0); }
+.quest-slide.anim-enter-prev {
+  animation: slideInLeft 0.5s var(--ease-out-expo) forwards;
 }
-@keyframes slideDown {
-  from { opacity: 1; transform: translateY(0); }
-  to   { opacity: 0; transform: translateY(-40px); }
+.quest-slide.anim-exit-prev {
+  animation: slideOutRight 0.35s var(--ease-out) forwards;
+  position: absolute;
+}
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(60px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes slideOutLeft {
+  from { opacity: 1; transform: translateX(0); }
+  to   { opacity: 0; transform: translateX(-60px); }
+}
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-60px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes slideOutRight {
+  from { opacity: 1; transform: translateX(0); }
+  to   { opacity: 0; transform: translateX(60px); }
 }
 
 .slide-content {
@@ -336,12 +365,12 @@
 }
 
 /* Typewriter cursor */
-.typewriter::after {
+.typewriter .tw-text::after {
   content: "▌";
   animation: blink 0.7s step-end infinite;
   color: var(--color-primary);
 }
-.typewriter.done::after { display: none; }
+.typewriter.done .tw-text::after { display: none; }
 @keyframes blink { 50% { opacity: 0; } }
 
 /* ---- Floating Label Fields --------------------------------------------- */
@@ -366,8 +395,12 @@
   font-size: var(--font-size-md);
   color: var(--color-text-primary);
   transition: all 0.3s var(--ease-spring);
-  resize: vertical;
   box-shadow: var(--shadow-sm);
+}
+.floating-field textarea {
+  resize: none;
+  overflow: hidden;
+  min-height: 64px;
 }
 .floating-field input:focus,
 .floating-field textarea:focus {
@@ -420,6 +453,46 @@
 }
 .floating-field.has-error label {
   color: var(--color-danger);
+}
+
+/* ---- Mic Button (Speech to Text) ---------------------------------------- */
+.mic-btn {
+  position: absolute;
+  right: 12px;
+  top: 12px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: var(--color-bg-glass);
+  backdrop-filter: var(--backdrop-blur);
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-primary);
+  box-shadow: var(--shadow-sm);
+  transition: all 0.3s var(--ease-spring);
+  z-index: 10;
+}
+.mic-btn:hover {
+  transform: scale(1.1);
+  background: var(--color-bg-elevated);
+}
+.mic-btn.is-recording {
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+  animation: pulseMic 1.5s infinite;
+}
+@keyframes pulseMic {
+  0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+.floating-field textarea,
+.floating-field input:not([type="range"]):not([type="radio"]):not([type="checkbox"]) {
+  padding-right: 52px;
 }
 
 .slide-label {
@@ -699,6 +772,31 @@
 .tag { display: inline-block; padding: 2px 8px; border-radius: var(--radius-pill); font-size: 11px; font-weight: 600; }
 .tag--info { background: var(--color-primary-soft); color: var(--color-primary); }
 
+/* ---- Swipe Hint -------------------------------------------------------- */
+.swipe-hint {
+  position: fixed;
+  bottom: 90px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 45;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  pointer-events: none;
+  animation: swipeHintAnim 2.5s infinite cubic-bezier(0.4, 0, 0.2, 1);
+  opacity: 0.7;
+}
+@keyframes swipeHintAnim {
+  0% { transform: translateX(-50%); opacity: 0; }
+  20% { transform: translateX(-60%); opacity: 0.8; }
+  80% { transform: translateX(-65%); opacity: 0; }
+  100% { transform: translateX(-50%); opacity: 0; }
+}
+
 /* ---- Bottom Nav -------------------------------------------------------- */
 .quest-nav {
   position: fixed;
@@ -730,30 +828,7 @@
 }
 
 
-.music-toggle {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: var(--color-bg-glass);
-  backdrop-filter: var(--backdrop-blur);
-  border: 1px solid var(--color-border);
-  color: var(--color-text);
-  font-size: 18px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  z-index: 100;
-  box-shadow: var(--shadow-glass);
-  transition: all 0.3s var(--ease-spring);
-}
-.music-toggle:hover {
-  transform: scale(1.1);
-  background: var(--color-bg-elevated);
-}
+
 .quest-nav__prev {
   background: var(--color-bg-elevated);
   color: var(--color-text-secondary);
