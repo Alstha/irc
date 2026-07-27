@@ -492,7 +492,34 @@
 }
 .floating-field textarea,
 .floating-field input:not([type="range"]):not([type="radio"]):not([type="checkbox"]) {
-  padding-right: 52px;
+  padding-right: 90px;
+}
+
+/* ---- Clear Button ---------------------------------------- */
+.clear-btn {
+  position: absolute;
+  right: 52px;
+  top: 12px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  font-size: 14px;
+  cursor: pointer;
+  display: none; /* Hidden by default */
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-muted);
+  transition: all 0.2s var(--ease-spring);
+  z-index: 10;
+}
+.clear-btn:hover {
+  background: var(--color-bg-elevated);
+  color: var(--color-text-primary);
+}
+.clear-btn.is-visible {
+  display: flex;
 }
 
 .slide-label {
