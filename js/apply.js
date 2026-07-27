@@ -364,34 +364,26 @@
     sttControls.appendChild(globalMicBtn);
     document.body.appendChild(sttControls);
 
-    // Prevent default on mousedown/touchstart to keep input focused!
-    [globalMicBtn, globalLangBtn, sttControls].forEach(function(el) {
-      el.addEventListener("mousedown", function(e) { e.preventDefault(); });
-      el.addEventListener("touchstart", function(e) { e.preventDefault(); });
-    });
-
-    // Language Toggle Logic
+    // Keep input focused when tapping the container gap
+    sttControls.addEventListener("mousedown", function(e) { e.preventDefault(); });
+    sttControls.addEventListener("touchstart", function(e) { e.preventDefault(); }, {passive: false});
+    
+    // Action Handlers
     var isNepali = false;
-    globalLangBtn.addEventListener("click", function(e) {
-      e.preventDefault();
-      e.stopPropagation();
+    function toggleLang() {
       if (isRecording) {
         recognition.stop();
       }
       isNepali = !isNepali;
       globalLangBtn.innerHTML = isNepali ? '🇳🇵' : '🇺🇸';
       recognition.lang = isNepali ? 'ne-NP' : 'en-US';
-    });
+    }
 
-    globalMicBtn.addEventListener("click", function(e) {
-      e.preventDefault();
-      e.stopPropagation();
-
+    function toggleMic() {
       if (isRecording) {
         recognition.stop();
         return;
       }
-
       if (activeInputEl) {
         try {
           recognition.start();
@@ -400,7 +392,25 @@
           console.error("Speech recognition error", err);
         }
       }
-    });
+    }
+
+    // Unified Touch/Mouse binding to prevent default (keeps input focused) while executing the action
+    var lastTap = 0;
+    function bindAction(el, actionFn) {
+      function handler(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var now = Date.now();
+        if (now - lastTap < 300) return; // Prevent double-fire from touchstart + mousedown
+        lastTap = now;
+        actionFn();
+      }
+      el.addEventListener("mousedown", handler);
+      el.addEventListener("touchstart", handler, {passive: false});
+    }
+
+    bindAction(globalLangBtn, toggleLang);
+    bindAction(globalMicBtn, toggleMic);
 
     recognition.onstart = function() {
       isRecording = true;
@@ -460,7 +470,16 @@
           recognition.stop(); // Stop recording if they switch fields
         }
         activeInputEl = this;
-        sttControls.classList.remove("is-disabled");
+        
+        // Dynamically attach controls to the focused field to avoid mobile keyboard overlap
+        var field = this.closest(".floating-field");
+        if (field) {
+          field.appendChild(sttControls);
+        }
+        
+        requestAnimationFrame(function() {
+          sttControls.classList.remove("is-disabled");
+        });
       });
 
       inputEl.addEventListener("blur", function() {
