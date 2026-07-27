@@ -354,6 +354,7 @@
       recognition.lang = 'en-US';
 
       var isRecording = false;
+      var intentionalStop = false;
       var originalText = "";
 
       micBtn.addEventListener("click", function(e) {
@@ -361,11 +362,13 @@
         e.stopPropagation();
 
         if (isRecording) {
+          intentionalStop = true;
           recognition.stop();
           return;
         }
 
         try {
+          intentionalStop = false;
           recognition.start();
         } catch(err) {
           alert("Microphone Error! Ensure you granted mic permissions and are running this on a secure connection (HTTPS).");
@@ -375,6 +378,7 @@
 
       recognition.onstart = function() {
         isRecording = true;
+        intentionalStop = false;
         micBtn.classList.add("is-recording");
         micBtn.innerHTML = '🛑';
         originalText = inputEl.value.trim();
@@ -398,12 +402,28 @@
       };
 
       recognition.onend = function() {
-        isRecording = false;
-        micBtn.classList.remove("is-recording");
-        micBtn.innerHTML = '🎤';
+        if (!intentionalStop && isRecording) {
+          // Auto-restart hack for iOS/WebKit pauses
+          try {
+            recognition.start();
+          } catch(e) {
+            isRecording = false;
+            micBtn.classList.remove("is-recording");
+            micBtn.innerHTML = '🎤';
+          }
+        } else {
+          isRecording = false;
+          micBtn.classList.remove("is-recording");
+          micBtn.innerHTML = '🎤';
+        }
       };
       
       recognition.onerror = function(e) {
+        if (e.error === 'no-speech') {
+          // Ignore no-speech so onend can auto-restart it
+          return;
+        }
+        intentionalStop = true; // Prevent auto-restart on real errors
         isRecording = false;
         micBtn.classList.remove("is-recording");
         micBtn.innerHTML = '🎤';
