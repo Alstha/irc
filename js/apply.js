@@ -348,94 +348,110 @@
         return;
       }
 
-      var recognition = new SpeechRecognition();
-      recognition.continuous = true; // Stay active for long answers
-      recognition.interimResults = false; // DISABLED: Fixes Android duplicate repetition bug
-      recognition.lang = 'en-US';
-
       var isRecording = false;
       var intentionalStop = false;
+      var finalTranscript = "";
+      var recognition = null; // We will instantiate this dynamically
+
+      function startRecognition() {
+        if (recognition) {
+          // If an old object exists, try to cleanly stop it before replacing
+          try { recognition.stop(); } catch(e) {}
+        }
+
+        // "Burn and Rebuild": Create a brand-new microphone object with ZERO memory!
+        recognition = new SpeechRecognition();
+        recognition.continuous = true;
+        recognition.interimResults = true; // Real-time is back!
+        recognition.lang = 'en-US';
+
+        recognition.onstart = function() {
+          isRecording = true;
+          intentionalStop = false;
+          micBtn.classList.add("is-recording");
+          micBtn.innerHTML = '🛑';
+          finalTranscript = inputEl.value.trim();
+          if (finalTranscript.length > 0) finalTranscript += " ";
+        };
+
+        recognition.onresult = function(e) {
+          var interimTranscript = "";
+          for (var i = e.resultIndex; i < e.results.length; ++i) {
+            if (e.results[i].isFinal) {
+              finalTranscript += e.results[i][0].transcript;
+            } else {
+              interimTranscript += e.results[i][0].transcript;
+            }
+          }
+          
+          var displayValue = finalTranscript + interimTranscript;
+          
+          // Remove trailing full stops added by STT
+          if (inputEl.tagName.toLowerCase() === 'input') {
+            displayValue = displayValue.replace(/\.+$/, "").trim();
+          }
+
+          inputEl.value = displayValue;
+          inputEl.dispatchEvent(new Event("input")); // To clear errors/triggers
+        };
+
+        recognition.onend = function() {
+          if (!intentionalStop && isRecording) {
+            // Auto-restart hack! Rebuilds the microphone entirely.
+            startRecognition();
+          } else {
+            isRecording = false;
+            micBtn.classList.remove("is-recording");
+            micBtn.innerHTML = '🎤';
+            recognition = null;
+          }
+        };
+        
+        recognition.onerror = function(e) {
+          if (e.error === 'no-speech') {
+            // Ignore no-speech so onend can auto-restart it
+            return;
+          }
+          intentionalStop = true; // Prevent auto-restart on real errors
+          isRecording = false;
+          micBtn.classList.remove("is-recording");
+          micBtn.innerHTML = '🎤';
+          recognition = null;
+          
+          if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
+            alert("Microphone access denied! Please allow microphone permissions in your browser settings.");
+          } else {
+            console.error("Speech recognition error: ", e.error);
+          }
+        };
+
+        try {
+          recognition.start();
+        } catch(err) {
+          isRecording = false;
+          micBtn.classList.remove("is-recording");
+          micBtn.innerHTML = '🎤';
+          alert("Microphone Error! Ensure you granted mic permissions and are running this on a secure connection (HTTPS).");
+          console.error("Speech recognition error", err);
+        }
+      }
 
       micBtn.addEventListener("click", function(e) {
         e.preventDefault();
         e.stopPropagation();
 
         if (isRecording) {
+          // Explicit stop clicked by user
           intentionalStop = true;
-          recognition.stop();
-          return;
-        }
-
-        try {
-          intentionalStop = false;
-          recognition.start();
-        } catch(err) {
-          alert("Microphone Error! Ensure you granted mic permissions and are running this on a secure connection (HTTPS).");
-          console.error("Speech recognition error", err);
-        }
-      });
-
-      recognition.onstart = function() {
-        isRecording = true;
-        intentionalStop = false;
-        micBtn.classList.add("is-recording");
-        micBtn.innerHTML = '🛑';
-      };
-
-      recognition.onresult = function(e) {
-        // Since interimResults is false, we only get finalized chunks.
-        // We extract the newly finalized text and simply append it.
-        var newText = "";
-        for (var i = e.resultIndex; i < e.results.length; ++i) {
-          newText += e.results[i][0].transcript;
-        }
-        
-        var currentVal = inputEl.value.trim();
-        if (currentVal.length > 0 && newText.trim().length > 0) currentVal += " ";
-        
-        var displayValue = currentVal + newText;
-        
-        // Remove trailing full stops added by STT
-        if (inputEl.tagName.toLowerCase() === 'input') {
-          displayValue = displayValue.replace(/\.+$/, "").trim();
-        }
-
-        inputEl.value = displayValue;
-        inputEl.dispatchEvent(new Event("input")); // To clear errors/triggers
-      };
-
-      recognition.onend = function() {
-        if (!intentionalStop && isRecording) {
-          // Auto-restart hack for iOS/WebKit pauses
-          try {
-            recognition.start();
-          } catch(e) {
-            isRecording = false;
-            micBtn.classList.remove("is-recording");
-            micBtn.innerHTML = '🎤';
+          if (recognition) {
+            try { recognition.stop(); } catch(e) {}
           }
-        } else {
-          isRecording = false;
-          micBtn.classList.remove("is-recording");
-          micBtn.innerHTML = '🎤';
-        }
-      };
-      
-      recognition.onerror = function(e) {
-        if (e.error === 'no-speech') {
-          // Ignore no-speech so onend can auto-restart it
           return;
         }
-        intentionalStop = true; // Prevent auto-restart on real errors
-        isRecording = false;
-        micBtn.classList.remove("is-recording");
-        micBtn.innerHTML = '🎤';
-        if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
-          alert("Microphone access denied! Please allow microphone permissions in your browser settings.");
-        } else {
-          console.error("Speech recognition error: ", e.error);
-        }
-      };
+
+        intentionalStop = false;
+        startRecognition();
+      });
     });
   }
 
