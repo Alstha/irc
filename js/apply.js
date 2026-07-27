@@ -340,41 +340,20 @@
       
       field.appendChild(micBtn);
 
-      var langBtn = document.createElement("button");
-      langBtn.type = "button";
-      langBtn.className = "lang-btn";
-      langBtn.title = "Switch Language";
-      langBtn.innerHTML = 'EN';
-      
-      field.appendChild(langBtn);
-
       if (!SpeechRecognition) {
         micBtn.addEventListener("click", function(e) {
           e.preventDefault();
           alert("Speech Recognition is not supported in this browser. Please use Chrome or Edge.");
         });
-        langBtn.style.display = "none";
         return;
       }
 
       var recognition = new SpeechRecognition();
       recognition.continuous = true;
       recognition.interimResults = true;
-      recognition.lang = 'en-US';
+      recognition.lang = 'ne-NP'; // Default to Nepali (handles English too)
 
-      var isNepali = false;
       var isRecording = false;
-
-      langBtn.addEventListener("click", function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        if (isRecording) {
-            recognition.stop();
-        }
-        isNepali = !isNepali;
-        langBtn.innerHTML = isNepali ? 'NP' : 'EN';
-        recognition.lang = isNepali ? 'ne-NP' : 'en-US';
-      });
       var originalText = "";
 
       micBtn.addEventListener("click", function(e) {
@@ -455,24 +434,51 @@
         textarea.style.height = textarea.scrollHeight + "px";
       }
       textarea.addEventListener("input", resize);
-      // Wait slightly so any CSS transitions/render layouts finish
       setTimeout(resize, 100);
     });
 
-    // Clean inputs on blur
-    document.querySelectorAll("input[type='text'], input[type='email'], input[type='tel']").forEach(function(input) {
-      input.addEventListener("blur", function() {
-        if (this.value) {
-          var val = this.value.replace(/\.+$/, "").trim();
-          
-          if (this.type === 'email' || this.type === 'tel') {
-            val = val.replace(/\s+/g, '');
+    document.querySelectorAll("input[type='text'], input[type='email'], input[type='tel'], textarea").forEach(function(input) {
+      // Add Clear Button logic
+      var field = input.closest(".floating-field");
+      if (field) {
+        var clearBtn = document.createElement("button");
+        clearBtn.type = "button";
+        clearBtn.className = "clear-btn";
+        clearBtn.title = "Clear Text";
+        clearBtn.innerHTML = '✖';
+        field.appendChild(clearBtn);
+
+        function toggleClearBtn() {
+          if (input.value.length > 0) {
+            clearBtn.classList.add("is-visible");
+          } else {
+            clearBtn.classList.remove("is-visible");
           }
-          
-          this.value = val;
-          this.dispatchEvent(new Event("input"));
         }
-      });
+
+        clearBtn.addEventListener("click", function(e) {
+          e.preventDefault();
+          input.value = "";
+          input.dispatchEvent(new Event("input"));
+          input.focus();
+        });
+
+        input.addEventListener("input", toggleClearBtn);
+        toggleClearBtn();
+      }
+
+      if (input.tagName.toLowerCase() === 'input') {
+        input.addEventListener("blur", function() {
+          if (this.value) {
+            var val = this.value.replace(/\.+$/, "").trim();
+            if (this.type === 'email' || this.type === 'tel') {
+              val = val.replace(/\s+/g, '');
+            }
+            this.value = val;
+            this.dispatchEvent(new Event("input"));
+          }
+        });
+      }
     });
   }
 
@@ -485,8 +491,26 @@
           card.classList.add("is-selected");
           group.classList.remove("has-error");
           formData[group.dataset.field] = card.dataset.value;
+          
+          // Mutual Exclusivity: Clear associated "Other" input if a predefined option is clicked
+          var otherInput = document.getElementById(group.dataset.field + "_other");
+          if (otherInput) {
+            otherInput.value = "";
+            otherInput.dispatchEvent(new Event("input"));
+          }
         });
       });
+      
+      // Mutual Exclusivity: Clear predefined options if user types in the "Other" input
+      var otherInput = document.getElementById(group.dataset.field + "_other");
+      if (otherInput) {
+        otherInput.addEventListener("input", function() {
+          if (this.value.trim().length > 0) {
+            group.querySelectorAll(".card-option").forEach(function (c) { c.classList.remove("is-selected"); });
+            formData[group.dataset.field] = null;
+          }
+        });
+      }
     });
   }
 
