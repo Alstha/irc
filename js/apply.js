@@ -340,11 +340,20 @@
       
       field.appendChild(micBtn);
 
+      var langBtn = document.createElement("button");
+      langBtn.type = "button";
+      langBtn.className = "lang-btn";
+      langBtn.title = "Switch Language";
+      langBtn.innerHTML = 'EN';
+      
+      field.appendChild(langBtn);
+
       if (!SpeechRecognition) {
         micBtn.addEventListener("click", function(e) {
           e.preventDefault();
           alert("Speech Recognition is not supported in this browser. Please use Chrome or Edge.");
         });
+        langBtn.style.display = "none";
         return;
       }
 
@@ -353,7 +362,19 @@
       recognition.interimResults = true;
       recognition.lang = 'en-US';
 
+      var isNepali = false;
       var isRecording = false;
+
+      langBtn.addEventListener("click", function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (isRecording) {
+            recognition.stop();
+        }
+        isNepali = !isNepali;
+        langBtn.innerHTML = isNepali ? 'NP' : 'EN';
+        recognition.lang = isNepali ? 'ne-NP' : 'en-US';
+      });
       var originalText = "";
 
       micBtn.addEventListener("click", function(e) {
@@ -392,6 +413,15 @@
         // Remove trailing full stops added by STT
         if (inputEl.tagName.toLowerCase() === 'input') {
           displayValue = displayValue.replace(/\.+$/, "").trim();
+          
+          // Remove ALL spaces for email and phone fields
+          if (inputEl.type === 'email' || inputEl.type === 'tel') {
+            displayValue = displayValue.replace(/\s+/g, '');
+            // For emails, also fix common STT mistakes like "at" or "dot"
+            if (inputEl.type === 'email') {
+              displayValue = displayValue.toLowerCase().replace(/at/g, '@').replace(/dot/g, '.');
+            }
+          }
         }
 
         inputEl.value = displayValue;
@@ -429,11 +459,17 @@
       setTimeout(resize, 100);
     });
 
-    // Strip trailing full stops from single-line inputs on blur
+    // Clean inputs on blur
     document.querySelectorAll("input[type='text'], input[type='email'], input[type='tel']").forEach(function(input) {
       input.addEventListener("blur", function() {
         if (this.value) {
-          this.value = this.value.replace(/\.+$/, "").trim();
+          var val = this.value.replace(/\.+$/, "").trim();
+          
+          if (this.type === 'email' || this.type === 'tel') {
+            val = val.replace(/\s+/g, '');
+          }
+          
+          this.value = val;
           this.dispatchEvent(new Event("input"));
         }
       });
