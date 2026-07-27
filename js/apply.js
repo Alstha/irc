@@ -375,16 +375,21 @@
         };
 
         recognition.onresult = function(e) {
-          var interimTranscript = "";
-          for (var i = e.resultIndex; i < e.results.length; ++i) {
+          var currentSessionFinal = "";
+          var currentSessionInterim = "";
+          
+          // Loop from 0 to e.results.length (ignoring resultIndex)
+          // This reconstructs the entire text from scratch on every event,
+          // guaranteeing it's impossible to double-count a finalized result.
+          for (var i = 0; i < e.results.length; ++i) {
             if (e.results[i].isFinal) {
-              finalTranscript += e.results[i][0].transcript;
+              currentSessionFinal += e.results[i][0].transcript;
             } else {
-              interimTranscript += e.results[i][0].transcript;
+              currentSessionInterim += e.results[i][0].transcript;
             }
           }
           
-          var displayValue = finalTranscript + interimTranscript;
+          var displayValue = finalTranscript + currentSessionFinal + currentSessionInterim;
           
           // Remove trailing full stops added by STT
           if (inputEl.tagName.toLowerCase() === 'input') {
