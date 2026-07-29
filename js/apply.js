@@ -6,8 +6,8 @@
 
   /* ---- State ----------------------------------------------------------- */
   var current = 0;
-  var TOTAL_SLIDES = 14; // 0=welcome, 1-13=questions
-  var TOTAL_STEPS  = 13; // question slides only (for counter)
+  var TOTAL_SLIDES = 16;
+  var TOTAL_STEPS  = 15;
   var formData = {};
   var skills = {};
 
@@ -28,6 +28,11 @@
     questNav     = document.getElementById("questNav");
     successOverlay = document.getElementById("questSuccess");
     confettiCanvas = document.getElementById("confettiCanvas");
+
+    if (slides && slides.length > 0) {
+      TOTAL_SLIDES = slides.length;
+      TOTAL_STEPS = TOTAL_SLIDES - 1;
+    }
 
     // Hide bottom nav until quest starts
     questNav.style.display = "none";
@@ -266,6 +271,10 @@
     // Progress fill
     var pct = current === 0 ? 0 : ((current) / (TOTAL_SLIDES - 1)) * 100;
     progressFill.style.width = pct + "%";
+
+    if (questNav) {
+      questNav.style.display = current === 0 ? "none" : "";
+    }
 
     // Buttons
     if (prevBtn) prevBtn.disabled = current === 0;
