@@ -94,23 +94,51 @@
     var touchStartY = null;
     var touchEndY = null;
 
-    document.addEventListener("touchstart", function(e) {
+    function handleDragStart(e) {
       if (e.target.closest('input, textarea, button, .card-option, .chip, .scale-slider, .mic-btn, a')) {
         touchStartX = null;
         touchStartY = null;
         return;
       }
-      touchStartX = e.changedTouches[0].screenX;
-      touchStartY = e.changedTouches[0].screenY;
-    }, {passive: true});
+      touchStartX = e.type.includes('mouse') ? e.screenX : e.changedTouches[0].screenX;
+      touchStartY = e.type.includes('mouse') ? e.screenY : e.changedTouches[0].screenY;
+    }
 
-    document.addEventListener("touchend", function(e) {
+    function handleDragEnd(e) {
       if (touchStartX === null || touchStartY === null) return;
-      touchEndX = e.changedTouches[0].screenX;
-      touchEndY = e.changedTouches[0].screenY;
+      touchEndX = e.type.includes('mouse') ? e.screenX : e.changedTouches[0].screenX;
+      touchEndY = e.type.includes('mouse') ? e.screenY : e.changedTouches[0].screenY;
       handleSwipe();
       touchStartX = null;
       touchStartY = null;
+    }
+
+    document.addEventListener("touchstart", handleDragStart, {passive: true});
+    document.addEventListener("touchend", handleDragEnd, {passive: true});
+    document.addEventListener("mousedown", handleDragStart, {passive: true});
+    document.addEventListener("mouseup", handleDragEnd, {passive: true});
+
+    let wheelDebounce = false;
+    document.addEventListener("wheel", function(e) {
+      if (e.target.closest('input, textarea, button, .card-option, .chip, .scale-slider, .mic-btn, a')) return;
+      if (Math.abs(e.deltaX) > Math.abs(e.deltaY) && Math.abs(e.deltaX) > 20) {
+        if (wheelDebounce) return;
+        wheelDebounce = true;
+        // e.deltaX > 0 means swipe left (next)
+        if (e.deltaX > 0) {
+          if (validateSlide(current) && current < TOTAL_SLIDES - 1) {
+            goToSlide(current + 1);
+          }
+        } else {
+          if (current > 1) {
+            goToSlide(current - 1);
+          } else if (current === 1) {
+            goToSlide(0);
+            questNav.style.display = "none";
+          }
+        }
+        setTimeout(() => wheelDebounce = false, 800);
+      }
     }, {passive: true});
 
     function handleSwipe() {
